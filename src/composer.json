@@ -1,0 +1,29 @@
+{
+    "name": "rethinkit/rediscart",
+    "description": "This will create a shopping cart using redis.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "julius",
+            "email": "juliuscedricjomena@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "RethinkIT\\RedisCart": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "RethinkIT\\RedisCart\\RedisCartServiceProvider"
+            ]
+        },
+        "aliases": {
+            "RedisCart": "RethinkIT\\RedisCart\\Facade"
+        }
+    }
+}
