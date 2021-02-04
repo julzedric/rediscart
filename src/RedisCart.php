@@ -4,6 +4,7 @@ namespace RethinkIT\RedisCart;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redis;
+use RethinkIT\RedisCart\RedisCartItem;
 use RethinkIT\RedisCart\Exceptions\InvalidRowIDException;
 
 class RedisCart 
@@ -12,6 +13,7 @@ class RedisCart
 
     private $instance;
     private $associatedModel = null;
+    private $redis;
 
     public $key;
     public $cartId;
@@ -55,6 +57,11 @@ class RedisCart
         return collect(json_decode(Redis::get($this->key), true)) ?: new Collection;
     }
 
+    public function content()
+    {
+        return new RedisCartItem(json_decode(Redis::get($this->key), true));
+    }
+
     public function add($id, $name = null, $qty = null, $price = null, array $options = [])
     {
         
@@ -70,6 +77,8 @@ class RedisCart
         $content[$this->cartId] = $cartItem;
 
         Redis::set($this->key, json_encode($content));
+
+        return $this;
     }
 
     public function update($cartId, $qty)
@@ -115,7 +124,7 @@ class RedisCart
             throw new \InvalidArgumentException('Please supply a valid price.');
         }
 
-        return (object) [
+        $cartItem = [
             'cartId' => $this->generateRowId($id, $options),
             'productId' => $id,
             'name' => $name,
@@ -123,6 +132,8 @@ class RedisCart
             'price' => $price,
             'options' => $options
         ];
+
+        return (object) $cartItem;
     }
     
     protected function generateRowId($id, array $options)
@@ -131,5 +142,23 @@ class RedisCart
 
         return md5($id . serialize($options));
     }
-    
+
+    public function associate ($model)
+    {
+        if(is_string($model) && ! class_exists($model)) {
+            throw new UnknownModelException("The supplied model {$model} does not exist.");
+        }
+
+        $this->associatedModel = is_string($model) ? $model : get_class($model);
+        $cartItem = $this->get($this->cartId);
+        $content = $this->getContent();
+
+        if ($content->has($this->cartId)) {
+            $cartItem['model'] = $this->associatedModel;
+        }
+
+        $content[$this->cartId] = $cartItem;
+
+        Redis::set($this->key, json_encode($content));
+    }
 }
